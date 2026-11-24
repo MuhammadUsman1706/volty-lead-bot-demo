@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lead-qualifying chatbot for voltade.com: a demo by Usman Gauhar</title>
+<meta name="description" content="An unofficial demo: a Volty web chat that qualifies leads arriving on voltade.com, built with the volty CLI and Claude Code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAFC; --ink:#221D3D; --violet:#6B47F5; --violet-soft:#EEE9FF;
+    --hot:#17895F; --warm:#B7791F; --slate:#6E6A86; --line:#E3E1EC;
+    --display:"Bricolage Grotesque",system-ui,sans-serif;
+    --body:"IBM Plex Sans",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--body)}
+  a{color:var(--violet);text-underline-offset:3px}
+  a:focus-visible,button:focus-visible{outline:3px solid var(--violet);outline-offset:3px;border-radius:6px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+
+  header.top{display:flex;justify-content:space-between;align-items:center;padding:22px 0;font-size:15px;color:var(--slate)}
+  header.top strong{color:var(--ink);font-weight:600}
+
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:40px 0 72px}
+  h1{font:700 clamp(38px,5.2vw,64px)/1.02 var(--display);letter-spacing:-.02em;margin:0 0 22px;max-width:13ch}
+  .lede{font-size:19px;max-width:52ch;margin:0 0 30px;color:#3A3456}
+  .actions{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .btn{appearance:none;border:0;cursor:pointer;font:600 16px/1 var(--body);padding:16px 22px;border-radius:999px;background:var(--violet);color:#fff;text-decoration:none}
+  .btn:hover{background:#5733E6}
+  .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+  .btn.ghost:hover{box-shadow:inset 0 0 0 1.5px var(--ink)}
+  .hint{font-size:14px;color:var(--slate);margin-top:14px}
+
+  /* The lead record: the one memorable thing */
+  .record{background:#fff;border:1.5px solid var(--ink);border-radius:18px;padding:26px 26px 20px;box-shadow:10px 10px 0 var(--violet-soft)}
+  .record-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+  .record-head h2{font:700 22px/1.2 var(--display);margin:0}
+  .record-head p{margin:4px 0 0;font-size:14px;color:var(--slate)}
+  .tier{font:600 13px/1 var(--body);padding:8px 12px;border-radius:999px;background:#E3F4EC;color:var(--hot);white-space:nowrap}
+  .fields{margin:0;display:grid;grid-template-columns:auto 1fr;column-gap:20px}
+  .fields dt,.fields dd{padding:9px 0;border-top:1px solid var(--line);margin:0;font-size:15px}
+  .fields dt{color:var(--slate)}
+  .fields dd{font-weight:500}
+  .score{display:flex;align-items:center;gap:10px}
+  .bar{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden;max-width:160px}
+  .bar i{display:block;height:100%;width:75%;background:var(--hot)}
+  .summary{margin:16px 0 0;padding:14px 16px;background:var(--violet-soft);border-radius:12px;font-size:15px}
+  .record-foot{font-size:13px;color:var(--slate);margin-top:12px}
+
+  @media (prefers-reduced-motion:no-preference){
+    .fields dd{opacity:0;transform:translateX(6px);animation:fill .45s ease forwards}
+    .fields dd:nth-of-type(1){animation-delay:.25s}.fields dd:nth-of-type(2){animation-delay:.45s}
+    .fields dd:nth-of-type(3){animation-delay:.65s}.fields dd:nth-of-type(4){animation-delay:.85s}
+    .fields dd:nth-of-type(5){animation-delay:1.05s}.fields dd:nth-of-type(6){animation-delay:1.25s}
+    .fields dd:nth-of-type(7){animation-delay:1.45s}
+    .bar i{width:0;animation:grow .9s 1.3s ease forwards}
+    .tier,.summary{opacity:0;animation:show .5s 1.9s ease forwards}
+  }
+  @keyframes fill{to{opacity:1;transform:none}}
+  @keyframes grow{to{width:75%}}
+  @keyframes show{to{opacity:1}}
+
+  section.block{padding:72px 0;border-top:1px solid var(--line)}
+  h2.sec{font:700 clamp(28px,3.4vw,40px)/1.1 var(--display);letter-spacing:-.015em;margin:0 0 12px}
+  .sec-intro{max-width:60ch;margin:0 0 36px;color:#3A3456}
+
+  /* Personas: a list, not a card grid */
+  .personas{list-style:none;margin:0;padding:0}
+  .personas li{display:grid;grid-template-columns:220px 1fr 1fr;gap:28px;padding:22px 0;border-top:1px solid var(--line)}
+  .personas li:last-child{border-bottom:1px solid var(--line)}
+  .who{font:700 19px/1.3 var(--display)}
+  .who small{display:block;font:400 14px/1.4 var(--body);color:var(--slate);margin-top:4px}
+  .do,.get{font-size:15.5px}
+  .do b,.get b{display:block;font-size:13px;font-weight:600;color:var(--slate);margin-bottom:4px}
+  .tap{display:inline-block;font-size:14px;padding:3px 10px;margin:2px 2px 2px 0;border-radius:999px;background:var(--violet-soft);color:#3F2BA8}
+
+  /* The real sequence */
+  .steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:28px;counter-reset:s}
+  .steps li{counter-increment:s;padding-top:18px;border-top:3px solid var(--ink)}
+  .steps li::before{content:counter(s);font:700 15px/1 var(--display);color:var(--violet);display:block;margin-bottom:10px}
+  .steps h3{font:700 19px/1.25 var(--display);margin:0 0 8px}
+  .steps p{margin:0;font-size:15.5px;color:#3A3456}
+
+  .built{display:grid;grid-template-columns:1fr 1fr;gap:48px}
+  .built ul{margin:0;padding-left:20px}
+  .built li{margin:0 0 10px}
+  code{font:500 14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:#F0EEF6;padding:2px 6px;border-radius:5px}
+
+  footer{padding:36px 0 120px;border-top:1px solid var(--line);font-size:14px;color:var(--slate)}
+  footer p{max-width:72ch;margin:0 0 8px}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr;gap:40px;padding-top:16px}
+    .personas li{grid-template-columns:1fr;gap:10px}
+    .steps{grid-template-columns:1fr 1fr}
+    .built{grid-template-columns:1fr;gap:24px}
+  }
+  @media (max-width:560px){
+    body{font-size:16px}
+    .steps{grid-template-columns:1fr}
+    .record{padding:20px 18px 16px}
+    .fields{column-gap:14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span><strong>Volty lead bot</strong>, a first-round demo for Voltade</span>
+    <span>by Usman Gauhar</span>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <h1>Every voltade.com visitor, qualified in a minute.</h1>
+        <p class="lede">A Volty web chat that greets visitors, asks five one-tap questions, recommends the right plan with a real customer result, and hands hot leads to the team with their details already in the CRM.</p>
+        <div class="actions">
+          <a class="btn" href="https://volty.voltade.com/chat/oebktae3yn559xcsmjf28" target="_blank" rel="noopener">Chat with the bot</a>
+          <a class="btn ghost" href="#try">See what to try</a>
+        </div>
+        <p class="hint">Or use the <b>Find your plan</b> launcher in the bottom-right corner of this page. Messages are real and land in the demo workspace's inbox.</p>
+      </div>
+
+      <aside class="record" aria-label="Example lead record the bot created">
+        <div class="record-head">
+          <div>
+            <h2>Clinic owner, 7–20 staff</h2>
+            <p>Contact record written by the bot during a test chat</p>
+          </div>
+          <span class="tier">Hot lead</span>
+        </div>
+        <dl class="fields">
+          <dt>Industry</dt><dd>Clinics &amp; spas</dd>
+          <dt>Challenge</dt><dd>Slow and after-hours replies</dd>
+          <dt>Monthly contacts</dt><dd>1,000–2,000</dd>
+          <dt>Team size</dt><dd>7–20</dd>
+          <dt>Timeline</dt><dd>As soon as possible</dd>
+          <dt>Plan fit</dt><dd>Pro, US$399/month</dd>
+          <dt>Lead score</dt><dd><span class="score"><span class="bar"><i></i></span>75 / 100</span></dd>
+        </dl>
+        <p class="summary">“Clinic seeking to solve slow after-hours replies; 1,000–2,000 monthly contacts, 7–20 team members, wants to launch ASAP. Recommend Pro.”</p>
+        <p class="record-foot">Assigned to the team with name and email attached.</p>
+      </aside>
+    </div>
+
+    <section class="block" aria-labelledby="try">
+      <h2 class="sec" id="try">Try it as one of these visitors</h2>
+      <p class="sec-intro">Each path ends somewhere different. Tap the buttons or type freely; the bot reads typed answers too, in any language.</p>
+      <ul class="personas">
+        <li>
+          <div class="who">The urgent buyer<small>Busy clinic, wants it now</small></div>
+          <div class="do"><b>Tap</b><span class="tap">Is Volty a fit?</span><span class="tap">Clinic / spa</span><span class="tap">Slow / after-hours</span><span class="tap">1,000 – 2,000</span><span class="tap">7 – 20</span><span class="tap">As soon as possible</span></div>
+          <div class="get"><b>You get</b>A Pro recommendation as a fact card, a matching clinic result, and a short form that hands you to the team as a Hot lead.</div>
+        </li>
+        <li>
+          <div class="who">The price checker<small>Wants numbers first</small></div>
+          <div class="do"><b>Tap</b><span class="tap">See pricing</span> then ask “Is there a free plan? Can I pay in SGD?”</div>
+          <div class="get"><b>You get</b>All four plans up front, honest answers (7-day trial, USD pricing it won’t guess about), and an offer to find your plan.</div>
+        </li>
+        <li>
+          <div class="who">The switcher<small>Already on a competitor</small></div>
+          <div class="do"><b>Type</b>“How are you different from respond.io? We have 4 agents and 3,000 contacts a month.”</div>
+          <div class="get"><b>You get</b>A factual comparison, the cheapest plan that fits (including the add-on option), and the respond.io migration.</div>
+        </li>
+        <li>
+          <div class="who">The explorer<small>Just looking around</small></div>
+          <div class="do"><b>Tap</b><span class="tap">Is Volty a fit?</span> … <span class="tap">Just exploring</span></div>
+          <div class="get"><b>You get</b>A recommendation plus a relevant case study, no pressure for an email, and a Nurture label in the CRM.</div>
+        </li>
+        <li>
+          <div class="who">Not a buyer<small>Job seeker or vendor</small></div>
+          <div class="do"><b>Type</b>“Are you hiring?” or write in Chinese or Malay</div>
+          <div class="get"><b>You get</b>A kind, brief redirect without collecting details, or a full answer in your language.</div>
+        </li>
+      </ul>
+    </section>
+
+    <section class="block" aria-labelledby="how">
+      <h2 class="sec" id="how">What happens behind the chat</h2>
+      <p class="sec-intro">The bot follows lead-qualification best practice: challenge before budget, five questions at most, something useful after every answer, and contact details only after it has helped.</p>
+      <ol class="steps">
+        <li><h3>One-tap questions</h3><p>Volty's quick-path flow asks business type, main challenge, monthly customers, team size and timeline, with a matching customer result after each answer.</p></li>
+        <li><h3>A tailored plan</h3><p>Volty's agent takes over with the whole path and recommends the smallest plan that fits, shown as a fact card with features for their challenge.</p></li>
+        <li><h3>Scored and recorded</h3><p>It scores the lead out of 100, picks Hot, Warm, Nurture or Not a fit, and writes 11 custom contact fields plus a one-line summary a salesperson can act on.</p></li>
+        <li><h3>The right next step</h3><p>Hot leads go to the team with a form, Warm leads get the free trial, explorers get a case study, and anyone can type “human” at any time.</p></li>
+      </ol>
+    </section>
+
+    <section class="block" aria-labelledby="built">
+      <h2 class="sec" id="built">How it was built</h2>
+      <div class="built">
+        <div>
+          <p>Set up from Claude Code with the <code>volty</code> CLI: <code>widgets create</code> for the web chat on voltade.com, then <code>volty init</code> to pull the workspace into a folder, edit it as files and <code>volty push</code> it back.</p>
+          <p>Tested end to end: <code>chat-flow try</code> for the button paths, <code>debug wake-sync --web-chat</code> for free-text visitors, and real chats on the hosted chat page.</p>
+        </div>
+        <ul>
+          <li><code>quick-paths.ts</code>: the qualification flow (Flow: Level 1)</li>
+          <li><code>instructions.md</code>: how the agent recommends, scores, records and hands off</li>
+          <li><code>org.md</code> and a Drive fact sheet: pricing, features, security and customer results from voltade.com</li>
+          <li>Contact fields and auto-add labels for the lead data, with smart Contact Labels on</li>
+          <li>Hand-off topics for sales, enterprise, support and complaints</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>An unofficial demo built by Usman Gauhar for Voltade's first-round task. It is not an official Voltade page; Volty and Voltade are Voltade Pte. Ltd.'s. Figures come from voltade.com as of November 2026.</p>
+    <p>Contact: <a href="mailto:usman1706@hotmail.com">usman1706@hotmail.com</a></p>
+  </footer>
+</div>
+
+<script async src="https://volty.voltade.com/widget/v1.js" data-widget-id="oebktae3yn559xcsmjf28"></script>
+
+</body>
+</html>

@@ -1,0 +1,98 @@
+// The Voltade website - Sales inbox: hours, reply targets, hand-off, priority guide, routing, Volty's reply mode and its web chat.
+// Written by volty pull from the live inbox. Who works the inbox, team members and channels stay in the app.
+import { defineInbox } from '~/inbox'
+
+export default defineInbox({
+  name: "Voltade website - Sales",
+  icon: null,
+  autoEnrollOrgMembers: false,
+  businessHours: null,
+  idleClose: {
+    afterMinutes: 1440,
+    owned: false,
+  },
+  firstResponseMinutes: 60,
+  handoff: {
+    targetMinutes: 240,
+    topics: [
+      "wants to talk to a person, sales or a demo",
+      "enterprise, custom pricing or a contract",
+      "existing customer account, billing or a bug",
+      "partnerships, press or careers",
+      "complaint or unhappy visitor",
+    ],
+    tellContact: true,
+  },
+  priority: {
+    smartPriority: "off",
+    smartSegments: "on",
+    guide: {
+      high: null,
+      medium: null,
+      low: null,
+    },
+  },
+  routing: {
+    mode: "rules_only",
+    policy: null,
+    openCap: null,
+    rules: [],
+  },
+  volty: {
+    agent: "Volty",
+    defaultResponder: true,
+    replyMode: "live",
+    afterHoursReplyMode: null,
+    window: null,
+    liveForNewContacts: false,
+    stepBackMinutes: 10,
+    newContactWindowDays: null,
+    waitExtends: false,
+    selfStepDown: null,
+  },
+  webChat: {
+    name: "Voltade website - Sales",
+    cardTitle: "Volty · Voltade",
+    launcherLabel: "Find your plan",
+    icon: "chat",
+    greeting: "Hi there 👋 How can we help?",
+    prefillBody: "Hi, I saw {page} on your website and would like to know more.",
+    prefillFallback: "Hi, I saw your website and would like to know more.",
+    primaryColor: "#1c1a21",
+    position: "bottom-right",
+    defaultCountry: "SG",
+    allowedDomains: [
+      "voltade.com",
+      "muhammadusman1706.github.io",
+    ],
+    font: "match",
+    showBranding: true,
+    googleAnalytics: true,
+    logo: null,
+    requireEmailCode: false,
+    verifyPhone: false,
+    verifyEmail: false,
+    handoffWhatsapp: true,
+    handoffEmail: true,
+    askTiming: "after",
+    headline: {
+      first: "Hi there 👋",
+      second: "See how Volty answers your customers 24/7",
+    },
+    openingStyle: "letter",
+    heroImage: null,
+    lookMatched: false,
+    startName: "off",
+    startEmail: "off",
+    startPhone: "off",
+    startFields: [],
+    handoffWhatsappNumber: null,
+    handoffEmailAddress: null,
+  },
+  quickPaths: {
+    enabled: true,
+    channels: [
+      "web",
+    ],
+  },
+})
