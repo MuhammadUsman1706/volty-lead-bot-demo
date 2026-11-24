@@ -18,7 +18,6 @@ export default defineInbox({
       "wants to talk to a person, sales or a demo",
       "enterprise, custom pricing or a contract",
       "existing customer account, billing or a bug",
-      "partnerships, press or careers",
       "complaint or unhappy visitor",
     ],
     tellContact: true,
